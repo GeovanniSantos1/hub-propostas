@@ -337,7 +337,7 @@ async function main() {
   console.log()
 
   // Buscar todas as propostas com paginação (Supabase limita a 1000 por query)
-  const allProposals: typeof proposals = []
+  const allProposals: { id: string; title: string | null; client_id: string | null; description: string | null; value: number | null; clients: { name: string } | null }[] = []
   let page = 0
   const PAGE_SIZE = 1000
 
