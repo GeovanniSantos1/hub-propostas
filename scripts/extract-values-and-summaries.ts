@@ -359,10 +359,9 @@ async function main() {
   }
 
   const proposals = allProposals
-  const error = null as null
 
-  if (error || !proposals) {
-    console.error('[ERRO]', error?.message)
+  if (proposals.length === 0) {
+    console.error('[ERRO] Nenhuma proposta encontrada.')
     process.exit(1)
   }
 
@@ -445,7 +444,7 @@ async function main() {
     }
 
     // Gerar resumo melhor
-    const newSummary = generateBetterSummary(bestSummaryText, proposal.title, clientName)
+    const newSummary = generateBetterSummary(bestSummaryText, proposal.title ?? '', clientName)
 
     // Montar update
     const update: Record<string, unknown> = {}
@@ -473,7 +472,7 @@ async function main() {
         errors++
       } else {
         const valueStr = bestValue ? ` | R$ ${bestValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''
-        process.stdout.write(`${progress} ${clientName} - ${proposal.title.substring(0, 40)}${valueStr}\n`)
+        process.stdout.write(`${progress} ${clientName} - ${(proposal.title ?? '').substring(0, 40)}${valueStr}\n`)
       }
     }
   }
