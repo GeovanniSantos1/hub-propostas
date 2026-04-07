@@ -12,6 +12,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { summarizeProposal } from '@/lib/ai/summarize'
+import { getContainerClient } from '@/lib/azure/storage'
 // Imports dinâmicos dos parsers para evitar problemas no build
 async function extractText(buffer: Buffer, type: string): Promise<string> {
   switch (type) {
@@ -95,21 +96,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Baixar o arquivo do Supabase Storage
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from('proposals')
-      .download(parseableFile.storage_path)
+    // Baixar o arquivo do Azure Blob Storage (ou Supabase como fallback)
+    let buffer: Buffer
 
-    if (downloadError || !fileData) {
-      return Response.json(
-        { error: 'Erro ao baixar o arquivo do storage.' },
-        { status: 500 },
-      )
+    try {
+      const containerClient = getContainerClient()
+      const blobClient = containerClient.getBlockBlobClient(parseableFile.storage_path)
+      const downloadResponse = await blobClient.download()
+      const downloadBuffer = await blobClient.downloadToBuffer()
+      buffer = downloadBuffer
+    } catch {
+      // Fallback: tentar Supabase Storage
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('proposals')
+        .download(parseableFile.storage_path)
+
+      if (downloadError || !fileData) {
+        return Response.json(
+          { error: 'Erro ao baixar o arquivo do storage.' },
+          { status: 500 },
+        )
+      }
+
+      const arrayBuffer = await fileData.arrayBuffer()
+      buffer = Buffer.from(arrayBuffer)
     }
-
-    // Converter Blob para Buffer
-    const arrayBuffer = await fileData.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
 
     // Extrair texto conforme o tipo do arquivo
     let text = ''

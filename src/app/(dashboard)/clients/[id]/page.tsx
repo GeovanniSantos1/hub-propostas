@@ -13,7 +13,9 @@ import {
 import { createClient } from "@/lib/supabase/server"
 import { ClientFormDialog } from "@/components/client-form-dialog"
 import { ProposalCard } from "@/components/proposal-card"
-import { InteractionTimeline } from "@/components/interaction-timeline"
+import { UnifiedTimeline } from "@/components/unified-timeline"
+import { HealthScoreCard } from "@/components/health-score-card"
+import { CrossSellCard } from "@/components/cross-sell-card"
 import { AddInteractionDialog } from "@/components/add-interaction-dialog"
 import { AddReminderDialog } from "@/components/add-reminder-dialog"
 import { Badge } from "@/components/ui/badge"
@@ -24,7 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import type { Client, Proposal, ProposalFile, Interaction, Reminder } from "@/types/database"
+import type { Client, Proposal, ProposalFile, Interaction, Reminder, Tag } from "@/types/database"
 
 export default async function ClientDetailPage({
   params,
@@ -46,10 +48,10 @@ export default async function ClientDetailPage({
     notFound()
   }
 
-  // Fetch proposals with files
+  // Fetch proposals with files and tags
   const { data: proposals } = await supabase
     .from("proposals")
-    .select("*, files:proposal_files(*)")
+    .select("*, files:proposal_files(*), proposal_tags(tag_id, tags(*))")
     .eq("client_id", id)
     .order("created_at", { ascending: false })
 
@@ -67,7 +69,11 @@ export default async function ClientDetailPage({
     .eq("client_id", id)
     .order("due_date", { ascending: true })
 
-  const typedProposals = (proposals ?? []) as (Proposal & { files: ProposalFile[] })[]
+  const typedProposals = (proposals ?? []).map((p) => {
+    const rawTags = (p as unknown as { proposal_tags?: { tags: Tag }[] }).proposal_tags || []
+    const tags = rawTags.map((pt) => pt.tags).filter(Boolean)
+    return { ...p, tags } as Proposal & { files: ProposalFile[]; tags: Tag[] }
+  })
   const typedInteractions = (interactions ?? []) as Interaction[]
   const typedReminders = (reminders ?? []) as Reminder[]
   const typedClient = client as Client
@@ -217,6 +223,9 @@ export default async function ClientDetailPage({
             </CardContent>
           </Card>
 
+          {/* Health Score */}
+          <HealthScoreCard clientId={id} />
+
           {/* Next Follow-up Reminder */}
           <Card
             className={
@@ -258,21 +267,28 @@ export default async function ClientDetailPage({
             </CardContent>
           </Card>
 
-          {/* Interaction Timeline */}
+          {/* Cross-sell IA */}
+          <CrossSellCard clientId={id} />
+
+          {/* Timeline Unificada */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2">
                   <Clock className="size-4" />
-                  Historico de Interacoes
+                  Timeline
                 </span>
                 <Badge variant="secondary">
-                  {typedInteractions.length}
+                  {typedInteractions.length + typedProposals.length + typedReminders.length}
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <InteractionTimeline interactions={typedInteractions} />
+              <UnifiedTimeline
+                proposals={typedProposals}
+                interactions={typedInteractions}
+                reminders={typedReminders}
+              />
             </CardContent>
           </Card>
         </div>

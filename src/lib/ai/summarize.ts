@@ -1,15 +1,15 @@
 /**
  * Modulo de sumarizacao de propostas com IA.
  *
- * Utiliza a API do Claude (Anthropic) para gerar resumos concisos
+ * Utiliza a API da OpenAI para gerar resumos concisos
  * de propostas comerciais. O prompt e escrito em portugues para
  * garantir que o resumo tambem seja gerado no mesmo idioma.
  */
 
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 })
 
 /**
@@ -21,8 +21,8 @@ const anthropic = new Anthropic({
  */
 export async function summarizeProposal(text: string): Promise<string> {
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 300,
       messages: [
         {
@@ -42,13 +42,7 @@ Resumo:`,
       ],
     })
 
-    // Extrair o texto da resposta
-    const content = message.content[0]
-    if (content.type === 'text') {
-      return content.text.trim()
-    }
-
-    return ''
+    return completion.choices[0]?.message?.content?.trim() ?? ''
   } catch (error) {
     console.error('[AI] Erro ao gerar resumo da proposta:', error)
     throw error

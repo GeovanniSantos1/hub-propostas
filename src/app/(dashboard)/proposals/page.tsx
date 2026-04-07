@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/table"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, ChevronLeft, ChevronRight, Paperclip, Eye } from "lucide-react"
+import { FileText, ChevronLeft, ChevronRight, Paperclip, Eye, ExternalLink, Sparkles } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { ProposalFilters } from "@/components/proposal-filters"
 
 const PAGE_SIZE = 10
@@ -67,7 +68,7 @@ export default async function ProposalsPage({
       `
       *,
       clients!inner(name),
-      proposal_files(id)
+      proposal_files(id, file_name, file_type)
     `,
       { count: "exact" }
     )
@@ -110,6 +111,12 @@ export default async function ProposalsPage({
             Gerencie todas as propostas comerciais
           </p>
         </div>
+        <Link href="/proposals/new">
+          <Button size="sm">
+            <Sparkles className="size-4" />
+            Nova Proposta
+          </Button>
+        </Link>
       </div>
 
       <ProposalFilters currentStatus={statusFilter} currentQuery={searchQuery} />
@@ -165,10 +172,28 @@ export default async function ProposalsPage({
                     </TableCell>
                     <TableCell className="text-center">
                       {fileCount > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-muted-foreground">
-                          <Paperclip className="size-3.5" />
-                          {fileCount}
-                        </span>
+                        <div className="inline-flex flex-wrap items-center justify-center gap-1">
+                          {(proposal.proposal_files as { id: string; file_name: string; file_type: string | null }[]).map((file) => {
+                            const ext = file.file_name.split(".").pop()?.toUpperCase() || "FILE"
+                            return (
+                              <a
+                                key={file.id}
+                                href={`/api/files/${file.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={file.file_name}
+                              >
+                                <Badge
+                                  variant="outline"
+                                  className="cursor-pointer gap-0.5 text-[10px] transition-colors hover:bg-muted"
+                                >
+                                  {ext}
+                                  <ExternalLink className="size-2.5" />
+                                </Badge>
+                              </a>
+                            )
+                          })}
+                        </div>
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}

@@ -1,6 +1,8 @@
 export type ProposalStatus = 'draft' | 'sent' | 'negotiating' | 'won' | 'lost'
 export type InteractionType = 'meeting' | 'call' | 'email' | 'visit' | 'note'
 export type UserRole = 'admin' | 'member'
+export type LossReason = 'price' | 'deadline' | 'competitor' | 'cancelled' | 'budget' | 'scope' | 'other'
+export type TagCategory = 'service' | 'technology' | 'area'
 
 export interface Profile {
   id: string
@@ -37,9 +39,21 @@ export interface Proposal {
   proposal_date: string | null
   original_filename: string | null
   ai_generated: boolean
+  loss_reason: LossReason | null
+  loss_notes: string | null
+  retry_date: string | null
+  retried_from: string | null
   created_by: string | null
   created_at: string
   updated_at: string
+}
+
+export interface Tag {
+  id: string
+  name: string
+  category: TagCategory
+  color: string | null
+  created_at: string
 }
 
 export interface ProposalFile {
