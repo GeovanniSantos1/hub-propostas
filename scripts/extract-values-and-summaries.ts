@@ -337,7 +337,7 @@ async function main() {
   console.log()
 
   // Buscar todas as propostas com paginação (Supabase limita a 1000 por query)
-  const allProposals: { id: string; title: string | null; client_id: string | null; description: string | null; value: number | null; clients: { name: string } | null }[] = []
+  const allProposals: { id: string; title: string | null; client_id: string | null; description: string | null; value: number | null; clients: { name: string }[] | null }[] = []
   let page = 0
   const PAGE_SIZE = 1000
 
@@ -375,7 +375,7 @@ async function main() {
 
   for (let i = 0; i < proposals.length; i++) {
     const proposal = proposals[i]
-    const clientName = (proposal.clients as { name: string } | null)?.name || 'Cliente'
+    const clientName = (Array.isArray(proposal.clients) ? proposal.clients[0]?.name : (proposal.clients as { name: string } | null)?.name) || 'Cliente'
     const progress = `[${i + 1}/${proposals.length}]`
 
     // Buscar arquivos
